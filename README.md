@@ -55,23 +55,14 @@ of the timings we have recorded. See the API docs in [codetimer.h](codetimer.h) 
 
 # Building and Running
 
-To build the usage example, first build and install [libcuckoo](https://github.com/efficient/libcuckoo). Then, compile as follows:
-
+Updated from upstream fork to use Modern CMake. Build and install using standard cmake build process
 ```
-g++ -o timerexample -std=c++11 timerexample.cc codetimer.cc codetimer.h
-```
-
-This assumes you have a version of GCC that supports C++ 11 installed.
-
-You can then run the usage example as follows:
-
-```
-./timerexample
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make install
 ```
 
-To use CodeTimer in your own projects, add `#include "codetimer.h"` to your source code, and add
-[codetimer.h](codetimer.h) and [codetimer.cc](codetimer.cc) to your build.
-
+Designed so that it can also be used within a larger project as an ```add_subdirectory()```
 # License
 
 CodeTimer is licensed under the [Apache License, Version 2.0](LICENSE.md)
