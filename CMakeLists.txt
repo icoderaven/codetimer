@@ -5,7 +5,7 @@ project(
   VERSION 0.1
   DESCRIPTION "A libcuckoo based simple library for timing"
   LANGUAGES CXX)
-
+include(CMakePackageConfigHelpers)
 find_package(libcuckoo QUIET)
 if(NOT libcuckoo)
   message("libcuckoo not found, pulling and building...")
@@ -28,7 +28,7 @@ endif()
 
 add_library(codetimer src/codetimer.cc)
 target_include_directories(
-  codetimer PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  codetimer PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
                    $<INSTALL_INTERFACE:include>)
 # Link for this project, and also provide libcuckoo as transitive interface
 target_link_libraries(codetimer PUBLIC libcuckoo)
