@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.11)
 
 project(
   codetimer
@@ -9,31 +9,39 @@ include(CMakePackageConfigHelpers)
 include(FetchContent)
 
 # Check if this CMakeLists is being used directly or via add_subdirectory
-set(INSTALL_CONFIG OFF)
+set(CODETIMER_MASTER_PROJECT OFF)
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-  set(INSTALL_CONFIG ON)
+  set(CODETIMER_MASTER_PROJECT ON)
 endif()
+# Allow for parent CMakeLists to populate the outgoing targets file
+if(NOT CODETIMER_EXPORT_NAME)
+  set(CODETIMER_EXPORT_NAME "${PROJECT_NAME}-targets")
+endif()
+message(STATUS "[codetimer]:: Export name is ${CODETIMER_EXPORT_NAME}")
 
-find_package(libcuckoo QUIET)
-if(NOT libcuckoo)
-  message(STATUS "libcuckoo not found, pulling and building...")
-  FetchContent_Declare(
-    libcuckoo
-    GIT_REPOSITORY https://github.com/icoderaven/libcuckoo.git
-    GIT_TAG master)
-  if(NOT libcuckoo_POPULATED)
-    FetchContent_Populate(libcuckoo)
-    add_subdirectory(${libcuckoo_SOURCE_DIR} ${libcuckoo_BINARY_DIR}
-                     EXCLUDE_FROM_ALL)
-  endif()
+option(CODETIMER_INSTALL "Install codetimer files?" ${CODETIMER_MASTER_PROJECT})
+
+message(STATUS "[codetimer]:: Pulling and configuring libcuckoo")
+FetchContent_Declare(
+  libcuckoo
+  GIT_REPOSITORY https://github.com/icoderaven/libcuckoo.git
+  GIT_TAG master)
+if(NOT libcuckoo_POPULATED)
+  FetchContent_Populate(libcuckoo)
+  set(LIBCUCKOO_EXPORT_NAME "${CODETIMER_EXPORT_NAME}")
+  option(LIBCUCKOO_BUILD_EXAMPLES OFF)
+  add_subdirectory(${libcuckoo_SOURCE_DIR} ${libcuckoo_BINARY_DIR}
+                   EXCLUDE_FROM_ALL)
 endif()
 
 add_library(codetimer SHARED src/codetimer.cc)
+# add alias to match exported target when calling using add_subdirectory()
+add_library(codetimer::codetimer ALIAS codetimer)
 target_include_directories(
   codetimer PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
                    $<INSTALL_INTERFACE:include>)
 # Link for this project, and also provide libcuckoo as transitive interface
-target_link_libraries(codetimer PUBLIC libcuckoo)
+target_link_libraries(codetimer PUBLIC libcuckoo::libcuckoo)
 # Add transitive c++11
 target_compile_features(codetimer PUBLIC cxx_std_11)
 
@@ -41,27 +49,28 @@ target_compile_features(codetimer PUBLIC cxx_std_11)
 add_executable(test_codetimer src/timerexample.cc)
 target_link_libraries(test_codetimer codetimer)
 
-if(INSTALL_CONFIG)
-  # cmake packaging
-  set(codetimer_pkgloc "share/cmake/codetimer")
+# cmake packaging
+set(CODETIMER_CMAKECONFIG_INSTALL_DIR
+    "share/cmake/${PROJECT_NAME}"
+    CACHE STRING "install path for codetimer-config.cmake")
 
-  write_basic_package_version_file(
-    "codetimer-config-version.cmake"
-    VERSION ${PACKAGE_VERSION}
-    COMPATIBILITY AnyNewerVersion)
-  install(
-    TARGETS codetimer
-    EXPORT codetimer-targets
-    LIBRARY DESTINATION lib)
-  # Generate targets file
-  install(
-    EXPORT codetimer-targets
-    FILE "codetimer-targets.cmake"
-    DESTINATION ${codetimer_pkgloc})
-  # This isn't sufficient, since dependencies also need our dependencies
-  # (libcuckoo) This is provided in cmake/codetimer-config.cmmake.
-  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/codetimer-config.cmake
-                ${CMAKE_CURRENT_BINARY_DIR}/codetimer-config-version.cmake
-          DESTINATION ${codetimer_pkgloc})
-  install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
-endif()
+write_basic_package_version_file(
+  "codetimer-config-version.cmake"
+  VERSION ${PACKAGE_VERSION}
+  COMPATIBILITY AnyNewerVersion)
+
+# Generate targets file
+install(TARGETS codetimer EXPORT "${CODETIMER_EXPORT_NAME}")
+
+install(
+  EXPORT "${CODETIMER_EXPORT_NAME}"
+  NAMESPACE "${PROJECT_NAME}::"
+  DESTINATION ${CODETIMER_CMAKECONFIG_INSTALL_DIR})
+
+# This isn't sufficient, since dependencies also need our dependencies
+# (libcuckoo) This is provided in cmake/codetimer-config.cmmake.
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/codetimer-config.cmake
+              ${CMAKE_CURRENT_BINARY_DIR}/codetimer-config-version.cmake
+        DESTINATION ${CODETIMER_CMAKECONFIG_INSTALL_DIR})
+
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
