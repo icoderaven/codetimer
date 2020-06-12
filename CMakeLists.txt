@@ -61,7 +61,7 @@ write_basic_package_version_file(
   COMPATIBILITY AnyNewerVersion)
 
 # Generate targets file
-install(TARGETS codetimer EXPORT "${CODETIMER_EXPORT_NAME}")
+install(TARGETS codetimer EXPORT "${CODETIMER_EXPORT_NAME}" LIBRARY DESTINATION lib)
 
 # Install the targets only if we're the Master project
 if(CODETIMER_MASTER_PROJECT)
