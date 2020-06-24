@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>codetimer</name>
+  <version>0.0.1</version>
+  <description>
+   A convenience library for timing code.
+  </description>
+  <url type="repository">https://github.com/icoderaven/codetimer</url>
+  <maintainer email="icoderaven@gmail.com">Kumar Shaurya Shankar</maintainer>
+  <license>Apache</license>
+
+  <buildtool_depend>cmake</buildtool_depend>
+
+  <export>
+    <build_type>cmake</build_type>
+  </export>
+</package>
